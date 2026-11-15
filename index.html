@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family wishes</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Family wishes</h1>
+    </header>
+    <main>
+      <p id="status" role="status" aria-live="polite">Loading…</p>
+      <noscript>Please enable JavaScript to sign in and save wishes.</noscript>
+
+      <form id="login-form" hidden>
+        <h2>Log in</h2>
+        <p><label>Username <input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]{3,32}" title="Use 3–32 letters, numbers, or underscores." required></label></p>
+        <p><label>Password <input name="password" type="password" autocomplete="current-password" required></label></p>
+        <button>Log in</button>
+      </form>
+
+      <section id="account" hidden>
+        <p id="signed-in"></p>
+        <button id="logout" type="button">Log out</button>
+      </section>
+
+      <section id="family" hidden>
+        <form id="wish-form">
+          <h2>Add or edit a wish</h2>
+          <input name="wishId" type="hidden">
+          <p><label>Title <input name="title" maxlength="120" required></label></p>
+          <p><label>Product link (optional) <input name="url" type="url" maxlength="2000" placeholder="https://"></label></p>
+          <p><label>Notes (optional) <textarea name="notes" maxlength="2000"></textarea></label></p>
+          <button>Save wish</button>
+          <button type="reset">Cancel editing</button>
+        </form>
+        <h2>Our lists</h2>
+        <button id="refresh" type="button">Refresh wishes</button>
+        <div id="profiles"></div>
+      </section>
+
+      <!-- JavaScript fills these templates. Keep the data-field hooks. -->
+      <template id="profile-template">
+        <section>
+          <h3 data-field="name"></h3>
+          <p data-field="empty">No wishes yet.</p>
+          <ul class="wishes"></ul>
+        </section>
+      </template>
+      <template id="wish-template">
+        <li>
+          <h4 data-field="title"></h4>
+          <p data-field="notes"></p>
+          <a data-field="url" target="_blank" rel="noopener noreferrer">View gift</a>
+          <p data-field="claim"></p>
+          <div data-field="actions"></div>
+        </li>
+      </template>
+    </main>
+  </body>
+</html>
