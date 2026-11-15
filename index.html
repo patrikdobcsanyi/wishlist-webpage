@@ -1,44 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hu">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family wishes</title>
+    <title data-i18n="Családi kívánságlista">Családi kívánságlista</title>
     <link rel="stylesheet" href="styles.css">
     <script type="module" src="app.js"></script>
   </head>
   <body>
     <header>
-      <h1>Family wishes</h1>
+      <div class="language-picker">
+        <label for="language" data-i18n="Nyelv">Nyelv</label>
+        <select id="language" name="language">
+          <option value="hu" lang="hu">Magyar</option>
+          <option value="de" lang="de">Deutsch</option>
+        </select>
+      </div>
+      <h1 data-i18n="Családi kívánságlista">Családi kívánságlista</h1>
     </header>
     <main>
-      <p id="status" role="status" aria-live="polite">Loading…</p>
-      <noscript>Please enable JavaScript to sign in and save wishes.</noscript>
+      <p id="status" role="status" aria-live="polite" data-i18n="Betöltés…">Betöltés…</p>
+      <noscript>A bejelentkezéshez és a kívánságok mentéséhez engedélyezd a JavaScriptet.</noscript>
 
       <form id="login-form" hidden>
-        <h2>Log in</h2>
-        <p><label>Username <input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]{3,32}" title="Use 3–32 letters, numbers, or underscores." required></label></p>
-        <p><label>Password <input name="password" type="password" autocomplete="current-password" required></label></p>
-        <button>Log in</button>
+        <h2 data-i18n="Bejelentkezés">Bejelentkezés</h2>
+        <p class="form-intro" data-i18n="Lépj be, és meríts ötletet az ajándékozáshoz.">Lépj be, és meríts ötletet az ajándékozáshoz.</p>
+        <p><label><span data-i18n="Felhasználónév">Felhasználónév</span> <input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]{3,32}" data-i18n-title="Használj 3–32 ékezet nélküli betűt, számot vagy aláhúzásjelet." title="Használj 3–32 ékezet nélküli betűt, számot vagy aláhúzásjelet." required></label></p>
+        <p><label><span data-i18n="Jelszó">Jelszó</span> <input name="password" type="password" autocomplete="current-password" required></label></p>
+        <button data-i18n="Bejelentkezés">Bejelentkezés</button>
       </form>
 
       <section id="account" hidden>
         <p id="signed-in"></p>
-        <button id="logout" type="button">Log out</button>
+        <button id="logout" type="button" data-i18n="Kijelentkezés">Kijelentkezés</button>
       </section>
 
       <section id="family" hidden>
         <form id="wish-form">
-          <h2>Add or edit a wish</h2>
+          <h2 data-i18n="Kívánság hozzáadása vagy szerkesztése">Kívánság hozzáadása vagy szerkesztése</h2>
           <input name="wishId" type="hidden">
-          <p><label>Title <input name="title" maxlength="120" required></label></p>
-          <p><label>Product link (optional) <input name="url" type="url" maxlength="2000" placeholder="https://"></label></p>
-          <p><label>Notes (optional) <textarea name="notes" maxlength="2000"></textarea></label></p>
-          <button>Save wish</button>
-          <button type="reset">Cancel editing</button>
+          <p><label><span data-i18n="Megnevezés">Megnevezés</span> <input name="title" maxlength="120" required></label></p>
+          <p><label><span data-i18n="Termék linkje (nem kötelező)">Termék linkje (nem kötelező)</span> <input name="url" type="url" maxlength="2000" placeholder="https://"></label></p>
+          <p><label><span data-i18n="Megjegyzés (nem kötelező)">Megjegyzés (nem kötelező)</span> <textarea name="notes" maxlength="2000"></textarea></label></p>
+          <button data-i18n="Kívánság mentése">Kívánság mentése</button>
+          <button type="reset" data-i18n="Mégse">Mégse</button>
         </form>
-        <h2>Our lists</h2>
-        <button id="refresh" type="button">Refresh wishes</button>
+        <div class="section-heading">
+          <h2 data-i18n="Kívánságlistáink">Kívánságlistáink</h2>
+          <button id="refresh" type="button" data-i18n="Listák frissítése">Listák frissítése</button>
+        </div>
         <div id="profiles"></div>
       </section>
 
@@ -46,7 +56,7 @@
       <template id="profile-template">
         <section>
           <h3 data-field="name"></h3>
-          <p data-field="empty">No wishes yet.</p>
+          <p data-field="empty" data-i18n="Még nincsenek kívánságok.">Még nincsenek kívánságok.</p>
           <ul class="wishes"></ul>
         </section>
       </template>
@@ -54,7 +64,7 @@
         <li>
           <h4 data-field="title"></h4>
           <p data-field="notes"></p>
-          <a data-field="url" target="_blank" rel="noopener noreferrer">View gift</a>
+          <a data-field="url" target="_blank" rel="noopener noreferrer" data-i18n="Ajándék megtekintése">Ajándék megtekintése</a>
           <p data-field="claim"></p>
           <div data-field="actions"></div>
         </li>

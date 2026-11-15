@@ -1,3 +1,4 @@
+import { t, setText } from "./i18n.js";
 import { supabaseUrl, supabasePublishableKey } from "./config.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -7,18 +8,47 @@ let db;
 let user;
 let generation = 0;
 
+// Only our own translated messages are displayed directly.
+function userError(message) {
+  return Object.assign(new Error(message), { userFacing: true });
+}
+
 function report(error) {
-  status.textContent = error.code === "23505"
-    ? "Someone already claimed that wish. Refresh the list."
-    : error.message || "Something went wrong. Please try again.";
+  const messages = {
+    "23505": "Valaki már lefoglalta ezt a kívánságot. Frissítsd a listát.",
+    "42501": "Ehhez a művelethez nincs jogosultságod.",
+    "23514": "Ellenőrizd a megadott adatokat és a mezők hosszát.",
+    "23503": "A kapcsolódó adat már nem érhető el. Frissítsd a listát.",
+    "PGRST116": "A kívánság már nem érhető el, vagy nem módosíthatod. Frissítsd a listát.",
+    invalid_credentials: "Hibás felhasználónév vagy jelszó.",
+    email_not_confirmed: "A fiók még nincs megerősítve. Kérd az adminisztrátor segítségét.",
+    over_request_rate_limit: "Túl sok próbálkozás. Próbáld újra egy kicsit később.",
+    session_not_found: "A munkamenet lejárt. Jelentkezz be újra.",
+    refresh_token_not_found: "A munkamenet lejárt. Jelentkezz be újra.",
+  };
+  setText(status, error.userFacing ? error.message
+    : messages[error.code] || "Nem sikerült a művelet. Ellenőrizd az internetkapcsolatot, és próbáld újra.");
+}
+
+// Native validation otherwise follows the browser's language, not the page's.
+for (const input of document.querySelectorAll("input, textarea")) {
+  input.addEventListener("input", () => input.setCustomValidity(""));
+  input.addEventListener("invalid", () => {
+    input.setCustomValidity("");
+    if (input.validity.valueMissing) input.setCustomValidity(t("Töltsd ki ezt a mezőt."));
+    else if (input.validity.patternMismatch || input.validity.tooShort) {
+      input.setCustomValidity(t("Használj 3–32 ékezet nélküli betűt, számot vagy aláhúzásjelet."));
+    } else if (input.validity.typeMismatch) input.setCustomValidity(t("Adj meg egy érvényes webcímet."));
+    else if (input.validity.tooLong) input.setCustomValidity(t("Rövidítsd le a megadott szöveget."));
+  });
 }
 
 async function run(button, action) {
   button.disabled = true;
-  status.textContent = "Working…";
+  setText(status, "Folyamatban…");
   try {
     await action();
-    status.textContent = "Done.";
+    setText(status, "Kész.");
   } catch (error) {
     report(error);
   } finally {
@@ -29,7 +59,7 @@ async function run(button, action) {
 function actionButton(container, label, action) {
   const button = document.createElement("button");
   button.type = "button";
-  button.textContent = label;
+  setText(button, label);
   button.addEventListener("click", () => run(button, action));
   container.append(button);
 }
@@ -45,8 +75,8 @@ async function loadWishes() {
   for (const result of results) if (result.error) throw result.error;
   const [profiles, wishes, claims] = results.map((result) => result.data);
   const me = profiles.find((profile) => profile.id === user.id);
-  if (!me) throw new Error("Your account has not been added to the family yet.");
-  $("#signed-in").textContent = `Signed in as ${me.display_name}`;
+  if (!me) throw userError("A fiókod még nincs hozzáadva a családhoz.");
+  setText($("#signed-in"), "Bejelentkezve: {name}", { name: me.display_name });
   $("#profiles").replaceChildren();
 
   for (const profile of profiles) {
@@ -63,30 +93,30 @@ async function loadWishes() {
       if (wish.url && /^https?:\/\//i.test(wish.url)) field("url").href = wish.url;
       const actions = field("actions");
       if (wish.owner_id === user.id) {
-        field("claim").textContent = "Reservations are a surprise.";
-        actionButton(actions, "Edit", async () => {
+        setText(field("claim"), "Titok, hogy ki készül ajándékkal.");
+        actionButton(actions, "Szerkesztés", async () => {
           form.elements.wishId.value = wish.id;
           form.elements.title.value = wish.title;
           form.elements.url.value = wish.url || "";
           form.elements.notes.value = wish.notes;
           form.elements.title.focus();
         });
-        actionButton(actions, "Delete", async () => {
-          if (!confirm(`Delete “${wish.title}”?`)) return;
+        actionButton(actions, "Törlés", async () => {
+          if (!confirm(t("Biztosan törlöd ezt a kívánságot: „{title}”?", { title: wish.title }))) return;
           await db.from("wishes").delete().eq("id", wish.id).throwOnError();
           if (form.elements.wishId.value === wish.id) form.reset();
           await loadWishes();
         });
       } else {
         const claim = claims.find((entry) => entry.wish_id === wish.id);
-        field("claim").textContent = claim
-          ? claim.claimant_id === user.id ? "Claimed by you" : "Already claimed"
-          : "Available";
-        if (!claim) actionButton(actions, "Claim", async () => {
+        setText(field("claim"), claim
+          ? claim.claimant_id === user.id ? "Te foglaltad le" : "Már lefoglalták"
+          : "Még szabad");
+        if (!claim) actionButton(actions, "Lefoglalás", async () => {
           await db.from("claims").insert({ wish_id: wish.id }).throwOnError();
           await loadWishes();
         });
-        if (claim?.claimant_id === user.id) actionButton(actions, "Release", async () => {
+        if (claim?.claimant_id === user.id) actionButton(actions, "Foglalás visszavonása", async () => {
           await db.from("claims").delete().eq("wish_id", wish.id).throwOnError();
           await loadWishes();
         });
@@ -105,20 +135,20 @@ async function showSession(session) {
   $("#account").hidden = !user;
   $("#family").hidden = true;
   $("#profiles").replaceChildren();
-  $("#signed-in").textContent = "";
+  setText($("#signed-in"), "");
   form.reset();
-  status.textContent = user ? "Loading wishes…" : "Log in with your family account.";
+  setText(status, user ? "Kívánságok betöltése…" : "Jelentkezz be a családi fiókoddal.");
   if (user) {
     try {
       await loadWishes();
-      if (user) status.textContent = "Wishes loaded.";
+      if (user) setText(status, "A kívánságok betöltve.");
     } catch (error) { report(error); }
   }
 }
 
 async function start() {
   if (!supabaseUrl || !supabasePublishableKey) {
-    status.textContent = "Setup needed: add your Supabase URL and publishable key to config.js. See README.md.";
+    setText(status, "Beállítás szükséges: add meg a Supabase URL-jét és nyilvános kulcsát a config.js fájlban. Útmutató: README.md.");
     return;
   }
   // Load the client only after the connection settings are configured.
@@ -130,7 +160,7 @@ async function start() {
     run(event.submitter, async () => {
       const username = login.elements.username.value.trim().toLowerCase();
       if (!/^[a-z0-9_]{3,32}$/.test(username)) {
-        throw new Error("Use 3–32 letters, numbers, or underscores for your username.");
+        throw userError("A felhasználónév 3–32 ékezet nélküli betűből, számból vagy aláhúzásjelből állhat.");
       }
       // Supabase password auth expects an email. These admin-created identifiers
       // are not mailboxes; the family signs in with just the username.
@@ -151,8 +181,8 @@ async function start() {
     run(event.submitter, async () => {
       const title = form.elements.title.value.trim();
       const url = form.elements.url.value.trim();
-      if (!title) throw new Error("Please enter a wish title.");
-      if (url && !/^https?:\/\//i.test(url)) throw new Error("Use an http:// or https:// product link.");
+      if (!title) throw userError("Add meg a kívánság megnevezését.");
+      if (url && !/^https?:\/\//i.test(url)) throw userError("A termék linkje http:// vagy https:// kezdetű legyen.");
       const values = { title, url: url || null, notes: form.elements.notes.value.trim() };
       const id = form.elements.wishId.value;
       const query = id ? db.from("wishes").update(values).eq("id", id) : db.from("wishes").insert(values);
