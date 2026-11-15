@@ -1,5 +1,12 @@
 // Hungarian text is the key; keep the German translation beside it.
 const german = {
+  "Előnézet betöltése": "Vorschau laden",
+  "Kép eltávolítása": "Bild entfernen",
+  "Az előnézethez https:// kezdetű link szükséges.": "Für die Vorschau ist ein Link mit https:// erforderlich.",
+  "Előnézet betöltése…": "Vorschau wird geladen…",
+  "Az előnézet betöltve.": "Vorschau geladen.",
+  "Nem található kép. A kívánság kép nélkül is menthető.": "Kein Bild gefunden. Du kannst den Wunsch auch ohne Bild speichern.",
+  "Az előnézet nem érhető el. A kívánság kép nélkül is menthető.": "Die Vorschau ist nicht verfügbar. Du kannst den Wunsch auch ohne Bild speichern.",
   "Családi kívánságlista": "Wünsche für die Familie",
   "Családunk apró örömei": "Die kleinen Freuden unserer Familie",
   "Apró kívánságok, szívből jövő ajándékok. Van mit várni!": "Kleine Wünsche. Geschenke von Herzen. Vorfreude für alle.",

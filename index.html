@@ -41,6 +41,13 @@
           <input name="wishId" type="hidden">
           <p><label><span data-i18n="Megnevezés">Megnevezés</span> <input name="title" maxlength="120" required></label></p>
           <p><label><span data-i18n="Termék linkje (nem kötelező)">Termék linkje (nem kötelező)</span> <input name="url" type="url" maxlength="2000" placeholder="https://"></label></p>
+          <button id="fetch-preview" type="button" data-i18n="Előnézet betöltése">Előnézet betöltése</button>
+          <p id="preview-status" role="status" aria-live="polite"></p>
+          <div id="link-preview" hidden>
+            <img id="preview-image" alt="" referrerpolicy="no-referrer" hidden>
+            <p id="preview-title"></p>
+            <button id="remove-image" type="button" data-i18n="Kép eltávolítása">Kép eltávolítása</button>
+          </div>
           <p><label><span data-i18n="Megjegyzés (nem kötelező)">Megjegyzés (nem kötelező)</span> <textarea name="notes" maxlength="2000"></textarea></label></p>
           <button data-i18n="Kívánság mentése">Kívánság mentése</button>
           <button type="reset" data-i18n="Mégse">Mégse</button>
@@ -62,6 +69,7 @@
       </template>
       <template id="wish-template">
         <li>
+          <img data-field="image" class="wish-image" alt="" loading="lazy" referrerpolicy="no-referrer" hidden>
           <h4 data-field="title"></h4>
           <p data-field="notes"></p>
           <a data-field="url" target="_blank" rel="noopener noreferrer" data-i18n="Ajándék megtekintése">Ajándék megtekintése</a>

@@ -93,3 +93,77 @@ your configured project before sharing the app with the family.
 References: [Supabase Auth](https://supabase.com/docs/guides/auth),
 [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security),
 [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
+
+## Product link previews
+
+The wish form calls the `link-preview` Edge Function when a product link changes.
+It suggests a title only if the title is empty, and shows an optional image. You
+can retry with the preview button or remove the image before saving. Titles and
+notes you type are never translated or replaced by a preview response.
+
+### Update your existing project
+
+1. Run `supabase/migrations/202611150001_wish_images.sql` in the SQL Editor.
+   **Do not rerun `schema.sql` on the existing database.** New projects can use
+   the updated `schema.sql` directly. The new frontend requires the image column.
+2. In Supabase → Edge Functions, create a function named `link-preview` using
+   the dashboard editor. Copy `supabase/functions/link-preview/index.js` into
+   its entry file (the code also works in the editor's default `index.ts`).
+3. In Edge Function secrets, set `PREVIEW_PUBLISHABLE_KEY` to the same public
+   key used in `config.js`. No service-role key is needed.
+4. Galaxus, Digitec, and Zalando Switzerland are allowed by default, with and
+   without `www`. To change the list, set `PREVIEW_ALLOWED_HOSTS` to exact trusted
+   hostnames separated by commas. This replaces the defaults, so include all
+   shops you want to keep. Existing environment settings also override defaults.
+5. The default image hosts are `static.digitecgalaxus.ch`, `static01.galaxus.com`,
+   and `img01.ztat.net`. Override them with `PREVIEW_IMAGE_HOSTS` if needed.
+   Page hosts are also allowed for images. If a CDN is missing, the title can
+   still load without an image. These settings do not guarantee a shop allows
+   automated requests; verify with real product links after deployment.
+6. Disable **Verify JWT with legacy secret** for this function and deploy it.
+   The handler itself verifies the user's token with Supabase Auth and checks
+   their `profiles` membership before fetching. It is not an anonymous endpoint.
+7. Publish the updated frontend files to GitHub Pages, including `i18n.js`.
+
+If you have the Supabase CLI installed and authenticated, deployment from this
+folder is also supported:
+
+```sh
+supabase functions deploy link-preview --project-ref gasuctbphdarhhvjwujp
+```
+
+The function configuration in `supabase/config.toml` sets its JavaScript entry
+point and disables legacy gateway JWT verification. Set the above environment
+values using the dashboard before trying previews.
+
+### Limits and checks
+
+Only HTTPS on the default port is accepted. Every page redirect is validated
+against the exact host allowlist; private/reserved DNS addresses are rejected.
+Only add trusted shops/CDNs: DNS validation is a preflight check, not connection
+pinning, so the allowlist is part of the security boundary. Arbitrary domains,
+IP literals, and unapproved redirect destinations are deliberately unsupported.
+Requests time out after eight seconds, allow three redirects, and read at most
+1 MB of HTML. Scripts are not run. The response contains only a title and image
+URL; no remote HTML is inserted into the page. CORS allows different frontend
+origins, but all data requests still require an authenticated family member.
+
+Images load directly from their original host with no referrer. They are not
+copied into Supabase Storage and can expire or be blocked by the shop. Broken
+images are hidden. Shops that require JavaScript, block bots, or provide no
+metadata will still allow a normal text-only wish. There is no automatic backfill:
+edit an existing wish and use the preview button to add an image.
+
+After deployment, check with a family account:
+
+- An allowed product URL suggests a title and image; save and refresh to check persistence.
+- A typed title remains unchanged. Editing a saved wish preserves its image.
+- Removing the image or changing the URL clears the saved image as expected.
+- An unsupported link or failed fetch still allows saving without an image.
+- Switching between Hungarian and German translates the preview controls and messages.
+- Signed-out/non-family requests fail; private addresses and unapproved redirects fail.
+
+The local code has been syntax-checked. The Edge runtime, database migration,
+shop responses, and authorization behavior still need these live checks.
+
+Reference: [Supabase function deployment](https://supabase.com/docs/guides/functions/deploy).
