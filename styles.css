@@ -320,26 +320,3 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   button { transition: none; }
 }
-
-/* Product images keep their proportions, including tall book covers. */
-.wish-image, #preview-image {
-  width: 100%;
-  height: 200px;
-  object-fit: contain;
-  background: #fff;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-#link-preview {
-  max-width: 340px;
-  padding: 16px;
-  margin: 16px 0;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-
-#preview-status {
-  color: var(--muted);
-  font-size: 0.875rem;
-}

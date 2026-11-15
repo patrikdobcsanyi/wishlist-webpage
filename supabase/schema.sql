@@ -12,7 +12,6 @@ create table public.wishes (
   owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
   title text not null check (char_length(trim(title)) between 1 and 120),
   url text check (url is null or (char_length(url) <= 2000 and url ~ '^https?://')),
-  image_url text check (image_url is null or (char_length(image_url) <= 2000 and image_url ~ '^https://')),
   notes text not null default '' check (char_length(notes) <= 2000),
   created_at timestamptz not null default now()
 );
@@ -36,8 +35,8 @@ alter table public.claims enable row level security;
 revoke all on public.profiles, public.wishes, public.claims from anon, authenticated;
 grant select on public.profiles to authenticated;
 grant select, delete on public.wishes to authenticated;
-grant insert (title, url, notes, image_url) on public.wishes to authenticated;
-grant update (title, url, notes, image_url) on public.wishes to authenticated;
+grant insert (title, url, notes) on public.wishes to authenticated;
+grant update (title, url, notes) on public.wishes to authenticated;
 grant select, delete on public.claims to authenticated;
 grant insert (wish_id) on public.claims to authenticated;
 

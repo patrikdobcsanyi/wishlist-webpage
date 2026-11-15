@@ -1,4 +1,0 @@
-[functions.link-preview]
-entrypoint = "./functions/link-preview/index.js"
-# The handler validates the user token via Auth and checks family membership.
-verify_jwt = false

@@ -7,77 +7,6 @@ const form = $("#wish-form");
 let db;
 let user;
 let generation = 0;
-let previewVersion = 0;
-let previewImage = null;
-let previewSource = "";
-
-function displayImage(element, url) {
-  element.hidden = true;
-  element.removeAttribute("src");
-  if (!url || !/^https:\/\//i.test(url)) return;
-  element.onerror = () => { element.hidden = true; };
-  element.hidden = false;
-  element.src = url;
-}
-
-function resetPreview() {
-  previewVersion++;
-  previewImage = null;
-  previewSource = "";
-  $("#link-preview").hidden = true;
-  displayImage($("#preview-image"), null);
-  $("#preview-title").textContent = "";
-  setText($("#preview-status"), "");
-  $("#fetch-preview").disabled = false;
-  form.querySelector('button:not([type])').disabled = false;
-}
-
-async function fetchPreview() {
-  resetPreview();
-  const url = form.elements.url.value.trim();
-  if (!url) return;
-  if (!/^https:\/\//i.test(url)) {
-    setText($("#preview-status"), "Az előnézethez https:// kezdetű link szükséges.");
-    return;
-  }
-  const version = previewVersion;
-  const titleBefore = form.elements.title.value;
-  $("#fetch-preview").disabled = true;
-  form.querySelector('button:not([type])').disabled = true;
-  setText($("#preview-status"), "Előnézet betöltése…");
-  try {
-    const { data, error } = await db.functions.invoke("link-preview", { body: { url } });
-    if (version !== previewVersion || url !== form.elements.url.value.trim()) return;
-    if (error || data?.error) throw new Error("preview_unavailable");
-    previewSource = url;
-    previewImage = typeof data?.image === "string" && /^https:\/\//i.test(data.image) ? data.image : null;
-    const title = typeof data?.title === "string" ? data.title.slice(0, 120) : "";
-    if (!titleBefore.trim() && !form.elements.title.value.trim()) form.elements.title.value = title;
-    displayImage($("#preview-image"), previewImage);
-    $("#preview-title").textContent = title;
-    $("#link-preview").hidden = !title && !previewImage;
-    $("#remove-image").hidden = !previewImage;
-    setText($("#preview-status"), previewImage ? "Az előnézet betöltve." : "Nem található kép. A kívánság kép nélkül is menthető.");
-  } catch {
-    if (version === previewVersion) setText($("#preview-status"), "Az előnézet nem érhető el. A kívánság kép nélkül is menthető.");
-  } finally {
-    if (version === previewVersion) {
-      $("#fetch-preview").disabled = false;
-      form.querySelector('button:not([type])').disabled = false;
-    }
-  }
-}
-
-form.addEventListener("reset", resetPreview);
-form.elements.url.addEventListener("input", resetPreview);
-form.elements.url.addEventListener("change", () => { if (db && user) fetchPreview(); });
-$("#fetch-preview").addEventListener("click", fetchPreview);
-$("#remove-image").addEventListener("click", () => {
-  previewImage = null;
-  displayImage($("#preview-image"), null);
-  $("#remove-image").hidden = true;
-});
-
 // Only our own translated messages are displayed directly.
 function userError(message) {
   return Object.assign(new Error(message), { userFacing: true });
@@ -138,7 +67,7 @@ async function loadWishes() {
   const current = ++generation;
   const results = await Promise.all([
     db.from("profiles").select("id, display_name").order("display_name"),
-    db.from("wishes").select("id, owner_id, title, url, notes, image_url").order("created_at"),
+    db.from("wishes").select("id, owner_id, title, url, notes").order("created_at"),
     db.from("claims").select("wish_id, claimant_id"),
   ]);
   if (current !== generation || !user) return;
@@ -157,7 +86,6 @@ async function loadWishes() {
     for (const wish of ownWishes) {
       const item = $("#wish-template").content.cloneNode(true);
       const field = (name) => item.querySelector(`[data-field="${name}"]`);
-      displayImage(field("image"), wish.image_url);
       field("title").textContent = wish.title;
       field("notes").textContent = wish.notes;
       field("url").hidden = !wish.url;
@@ -166,12 +94,6 @@ async function loadWishes() {
       if (wish.owner_id === user.id) {
         setText(field("claim"), "Titok, hogy ki készül ajándékkal.");
         actionButton(actions, "Szerkesztés", async () => {
-          resetPreview();
-          previewImage = wish.image_url || null;
-          previewSource = wish.url || "";
-          displayImage($("#preview-image"), previewImage);
-          $("#link-preview").hidden = !previewImage;
-          $("#remove-image").hidden = !previewImage;
           form.elements.wishId.value = wish.id;
           form.elements.title.value = wish.title;
           form.elements.url.value = wish.url || "";
@@ -260,8 +182,7 @@ async function start() {
       const url = form.elements.url.value.trim();
       if (!title) throw userError("Add meg a kívánság megnevezését.");
       if (url && !/^https?:\/\//i.test(url)) throw userError("A termék linkje http:// vagy https:// kezdetű legyen.");
-      const values = { title, url: url || null, notes: form.elements.notes.value.trim(),
-        image_url: previewSource === url ? previewImage : null };
+      const values = { title, url: url || null, notes: form.elements.notes.value.trim() };
       const id = form.elements.wishId.value;
       const query = id ? db.from("wishes").update(values).eq("id", id) : db.from("wishes").insert(values);
       await query.select("id").single().throwOnError();
